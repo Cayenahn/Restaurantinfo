@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cierre del Negocio — Ingresos</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --primary:       #2563EB;
+  --primary-dark:  #1E3A8A;
+  --primary-light: #60A5FA;
+  --accent:        #84CC16;
+  --text-dark:     #0F172A;
+  --text-body:     #334155;
+  --text-muted:    #64748B;
+  --border:        #E2E8F0;
+  --bg-light:      #F8FAFC;
+  --white:         #FFFFFF;
+  --red:           #DC2626;
+  --sidebar-w:     260px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg-light);color:var(--text-body);min-height:100vh;display:flex;}
+
+/* ══ SIDEBAR ══ */
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:linear-gradient(175deg,#0F172A 0%,#1E3A8A 100%);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;transition:transform 0.3s cubic-bezier(.4,0,.2,1);}
+.sidebar.closed{transform:translateX(calc(-1 * var(--sidebar-w)));}
+.sb-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px;}
+.sb-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#2563EB,#84CC16);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;}
+.sb-logo-text{font-size:13px;font-weight:700;color:rgba(255,255,255,0.92);line-height:1.25;}
+.sb-logo-text small{display:block;font-size:10px;font-weight:400;color:rgba(255,255,255,0.35);letter-spacing:.06em;text-transform:uppercase;}
+.sb-section{padding:20px 12px 4px;}
+.sb-label{font-size:9px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:.1em;text-transform:uppercase;padding:0 8px;margin-bottom:6px;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;color:rgba(255,255,255,0.58);font-size:12.5px;font-weight:500;text-decoration:none;cursor:pointer;transition:background .18s,color .18s;margin-bottom:1px;position:relative;}
+.sb-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);}
+.sb-item.active{background:rgba(37,99,235,0.45);color:#fff;font-weight:600;}
+.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--accent);border-radius:0 3px 3px 0;}
+.sb-icon{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sb-item.active .sb-icon{background:rgba(37,99,235,0.4);}
+.sb-soon{margin-left:auto;font-size:9px;font-weight:600;color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:999px;}
+.sb-footer{margin-top:auto;padding:14px 12px;border-top:1px solid rgba(255,255,255,0.07);}
+.sb-user{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,0.05);}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#60A5FA);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-user-info strong{display:block;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.88);}
+.sb-user-info span{font-size:10px;color:rgba(255,255,255,0.32);}
+
+/* ══ OVERLAY ══ */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:99;backdrop-filter:blur(2px);}
+.overlay.on{display:block;}
+
+/* ══ LAYOUT ══ */
+.layout{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;transition:margin-left 0.3s cubic-bezier(.4,0,.2,1);min-height:100vh;}
+.layout.full{margin-left:0;}
+
+/* ══ TOPBAR ══ */
+.topbar{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;position:sticky;top:0;z-index:50;}
+.hamburger{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--border);background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4.5px;transition:border-color .2s,background .2s;flex-shrink:0;}
+.hamburger:hover{border-color:var(--primary-light);background:var(--bg-light);}
+.h-line{width:15px;height:1.5px;background:var(--text-dark);border-radius:2px;transition:transform .25s,opacity .25s;}
+.hamburger.open .h-line:nth-child(1){transform:translateY(6px) rotate(45deg);}
+.hamburger.open .h-line:nth-child(2){opacity:0;}
+.hamburger.open .h-line:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+.topbar-title{font-size:14px;font-weight:700;color:var(--text-dark);}
+.topbar-right{margin-left:auto;}
+.topbar-date{font-size:12px;font-weight:600;color:var(--text-muted);background:var(--bg-light);border:1.5px solid var(--border);border-radius:9px;padding:6px 14px;letter-spacing:.01em;}
+
+/* ══ MAIN ══ */
+.main{padding:28px 28px 60px;flex:1;max-width:1100px;}
+
+.page-header{margin-bottom:24px;animation:fadeUp .35s ease both;}
+.page-header h1{font-size:21px;font-weight:800;color:var(--text-dark);letter-spacing:-.02em;margin-bottom:3px;}
+.page-header p{font-size:13px;color:var(--text-muted);}
+
+/* ══ FECHA ══ */
+.fecha-card{
+  background:var(--white);border-radius:14px;border:1px solid var(--border);
+  padding:16px 22px;margin-bottom:22px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  animation:fadeUp .38s ease .04s both;
+}
+.fecha-label{font-size:12.5px;font-weight:700;color:var(--text-dark);white-space:nowrap;}
+.fecha-input-wrap{position:relative;}
+.fecha-input{
+  height:36px;padding:0 14px;
+  border:1.5px solid var(--border);border-radius:9px;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--text-dark);
+  background:var(--bg-light);outline:none;cursor:pointer;transition:border-color .2s;
+}
+.fecha-input:focus{border-color:var(--primary);}
+
+/* ══ GRID ══ */
+.bubbles-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+  gap:16px;
+  margin-bottom:20px;
+}
+
+/* ══ SECCIÓN (antes "burbuja") ══ */
+.bubble{
+  background:var(--white);border-radius:16px;border:1px solid var(--border);
+  overflow:hidden;animation:fadeUp .42s ease both;
+}
+.bubble:nth-child(1){animation-delay:.06s;}
+.bubble:nth-child(2){animation-delay:.11s;}
+.bubble:nth-child(3){animation-delay:.16s;}
+.bubble:nth-child(4){animation-delay:.21s;}
+
+.bubble-header{
+  padding:14px 18px;
+  display:flex;align-items:center;gap:11px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg-light);
+}
+.bubble-num{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--primary-dark);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.bubble-title{font-size:13px;font-weight:700;color:var(--text-dark);}
+.bubble-subtitle{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.bubble-total{margin-left:auto;text-align:right;}
+.bubble-total-label{font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;}
+.bubble-total-value{font-size:15px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums;}
+
+.bubble-body{padding:16px 18px;}
+
+/* ── Billetes ── */
+
+.bill-grid{display:flex;flex-direction:column;gap:6px;}
+.bill-row{display:flex;align-items:center;gap:8px;}
+.bill-denom{
+  width:64px;text-align:center;font-size:11px;font-weight:700;
+  padding:5px 0;border-radius:7px;
+  background:var(--primary-dark);color:#fff;flex-shrink:0;
+}
+.bill-sep{color:var(--border);font-size:13px;font-weight:400;width:10px;text-align:center;flex-shrink:0;}
+.bill-input{
+  width:64px;height:32px;border:1.5px solid var(--border);border-radius:8px;
+  text-align:center;font-family:inherit;font-size:13px;font-weight:700;
+  color:var(--text-dark);background:var(--bg-light);outline:none;
+  transition:border-color .2s,background .2s;
+}
+.bill-input:focus{border-color:var(--primary);background:#fff;}
+.bill-eq{color:var(--border);font-size:12px;width:8px;text-align:center;flex-shrink:0;}
+.bill-result{flex:1;text-align:right;font-size:12.5px;font-weight:600;color:var(--text-body);font-variant-numeric:tabular-nums;}
+.bill-divider{height:1px;background:var(--border);margin:8px 0 4px;}
+.bill-subtotal-row{display:flex;align-items:center;justify-content:space-between;padding-top:4px;}
+.bill-subtotal-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;}
+.bill-subtotal-val{font-size:14px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums;}
+
+/* ── POS ── */
+.pos-input-wrap{position:relative;margin-bottom:10px;}
+.pos-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:var(--text-muted);}
+.pos-input{width:100%;height:46px;padding:0 14px 0 28px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:18px;font-weight:700;color:var(--text-dark);background:var(--bg-light);outline:none;transition:border-color .2s;}
+.pos-input:focus{border-color:var(--primary);background:#fff;}
+.pos-formula{background:var(--bg-light);border:1px solid var(--border);border-radius:9px;padding:10px 13px;margin-bottom:10px;}
+.pos-formula-text{font-size:10.5px;color:var(--text-muted);font-weight:500;}
+.pos-formula-eq{font-size:12.5px;font-weight:700;color:var(--text-dark);margin-top:3px;font-variant-numeric:tabular-nums;}
+.pos-result-row{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1.5px solid var(--border);}
+.pos-result-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;}
+.pos-result-val{font-size:19px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums;}
+
+/* ── Transferencias ── */
+.trans-list{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;max-height:200px;overflow-y:auto;}
+.trans-item{display:flex;align-items:center;gap:7px;}
+.trans-item-num{width:20px;height:20px;border-radius:50%;background:var(--bg-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text-muted);flex-shrink:0;}
+.trans-desc{flex:1;height:32px;border:1.5px solid var(--border);border-radius:8px;padding:0 9px;font-family:inherit;font-size:12px;color:var(--text-body);background:var(--bg-light);outline:none;transition:border-color .2s;}
+.trans-desc:focus{border-color:var(--primary);background:#fff;}
+.trans-amt{width:105px;height:32px;border:1.5px solid var(--border);border-radius:8px;padding:0 9px;font-family:inherit;font-size:13px;font-weight:700;text-align:right;color:var(--text-dark);background:var(--bg-light);outline:none;transition:border-color .2s;}
+.trans-amt:focus{border-color:var(--primary);background:#fff;}
+.trans-del{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;transition:background .15s,color .15s;flex-shrink:0;}
+.trans-del:hover{background:#FEF2F2;color:var(--red);border-color:#FCA5A5;}
+.btn-add-trans{display:flex;align-items:center;gap:6px;width:100%;padding:7px 12px;border:1.5px dashed var(--border);border-radius:9px;background:transparent;font-family:inherit;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:border-color .2s,color .2s;margin-bottom:10px;}
+.btn-add-trans:hover{border-color:var(--primary);color:var(--primary);}
+.trans-total-row{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1.5px solid var(--border);}
+.trans-total-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;}
+.trans-total-val{font-size:19px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums;}
+
+/* ── Otros Ingresos ── */
+.otros-desc{width:100%;height:34px;border:1.5px solid var(--border);border-radius:9px;padding:0 12px;font-family:inherit;font-size:12px;color:var(--text-body);background:var(--bg-light);outline:none;transition:border-color .2s;margin-bottom:10px;}
+.otros-desc:focus{border-color:var(--primary);background:#fff;}
+.otros-input-wrap{position:relative;margin-bottom:10px;}
+.otros-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:var(--text-muted);}
+.otros-input{width:100%;height:46px;padding:0 14px 0 28px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit;font-size:18px;font-weight:700;color:var(--text-dark);background:var(--bg-light);outline:none;transition:border-color .2s;}
+.otros-input:focus{border-color:var(--primary);background:#fff;}
+.otros-note{font-size:11px;color:var(--text-muted);padding-top:10px;border-top:1px solid var(--border);line-height:1.5;}
+
+/* ══ RESUMEN FINAL ══ */
+.result-panel{
+  background:var(--white);border-radius:16px;border:1px solid var(--border);
+  overflow:hidden;animation:fadeUp .48s ease .26s both;
+}
+.result-header{padding:16px 22px;border-bottom:1px solid var(--border);}
+.result-header h2{font-size:14px;font-weight:700;color:var(--text-dark);}
+.result-header p{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+
+.result-grid{display:grid;grid-template-columns:repeat(4,1fr);}
+.result-item{padding:18px 22px;border-right:1px solid var(--border);}
+.result-item:last-child{border-right:none;}
+.result-item-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;}
+.result-item-val{font-size:18px;font-weight:800;color:var(--text-dark);font-variant-numeric:tabular-nums;}
+
+.result-total{
+  padding:18px 22px;
+  border-top:2px solid var(--primary);
+  background:rgba(37,99,235,0.03);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.result-total-info h3{font-size:13.5px;font-weight:800;color:var(--text-dark);}
+.result-total-info p{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.result-total-val{font-size:26px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+
+.result-actions{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.btn-guardar{display:flex;align-items:center;gap:7px;padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .2s,transform .15s;}
+.btn-guardar:hover{background:var(--primary-dark);transform:scale(1.02);}
+.btn-limpiar{display:flex;align-items:center;gap:7px;padding:10px 16px;background:transparent;color:var(--text-muted);border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:border-color .2s,color .2s;}
+.btn-limpiar:hover{border-color:var(--red);color:var(--red);}
+.history-toggle{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;background:none;border:none;font-family:inherit;opacity:.8;transition:opacity .15s;}
+.history-toggle:hover{opacity:1;}
+
+/* Historial */
+.history-panel{border-top:1px solid var(--border);padding:14px 22px;display:none;max-height:240px;overflow-y:auto;}
+.history-panel.open{display:block;}
+.history-table{width:100%;border-collapse:collapse;font-size:12px;}
+.history-table th{text-align:left;padding:6px 10px;font-size:9.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;background:var(--bg-light);border-bottom:1px solid var(--border);}
+.history-table td{padding:8px 10px;border-bottom:1px solid rgba(226,232,240,.4);color:var(--text-body);}
+.history-table tr:hover td{background:#f7f9ff;}
+.history-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:12.5px;}
+.del-cierre{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;transition:color .15s;}
+.del-cierre:hover{color:var(--red);}
+
+/* Toast */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--text-dark);color:#fff;padding:10px 18px;border-radius:11px;font-size:12.5px;font-weight:500;transform:translateY(70px);opacity:0;transition:transform .25s,opacity .25s;z-index:9999;pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* == Burbuja 5: Fiscal == */
+.fiscal-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(226,232,240,0.5);}
+.fiscal-row:last-of-type{border-bottom:none;}
+.fiscal-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-body);flex:1;}
+.fiscal-tag{font-size:9px;font-weight:700;padding:3px 7px;border-radius:999px;letter-spacing:.05em;flex-shrink:0;}
+.fiscal-tag.exenta{background:#EFF6FF;color:var(--primary-dark);}
+.fiscal-tag.g15{background:#F0FDF4;color:#166534;}
+.fiscal-tag.g18{background:#FEF9C3;color:#854D0E;}
+.fiscal-input-wrap{position:relative;flex-shrink:0;}
+.fiscal-prefix{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:var(--text-muted);}
+.fiscal-input{width:130px;height:34px;padding:0 10px 0 24px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;text-align:right;color:var(--text-dark);background:var(--bg-light);outline:none;transition:border-color .2s;}
+.fiscal-input:focus{border-color:var(--primary);background:#fff;}
+.fiscal-total-row{display:flex;align-items:center;justify-content:space-between;padding-top:10px;margin-top:4px;border-top:2px solid var(--border);}
+.fiscal-total-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;}
+.fiscal-total-val{font-size:16px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:700px){
+  .sidebar{transform:translateX(calc(-1 * var(--sidebar-w)));}
+  .sidebar.open{transform:translateX(0);}
+  .layout{margin-left:0!important;}
+  .main{padding:16px 14px 60px;}
+  .bubbles-grid{grid-template-columns:1fr;}
+  .result-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">R</div>
+    <div class="sb-logo-text">RestoPro <small>Sistema de Gestión</small></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Finanzas</div>
+    <a class="sb-item" href="pl-restaurante.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16V12M12 16V8M17 16v-4"/></svg></div>Estado de Resultados
+    </a>
+    <a class="sb-item active" href="cierre.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></div>Cierre del Negocio
+    </a>
+    <a class="sb-item" href="#">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>Gastos Operativos<span class="sb-soon">Pronto</span>
+    </a>
+    <a class="sb-item" href="#">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>Gastos Administrativos<span class="sb-soon">Pronto</span>
+    </a>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Sistema</div>
+    <a class="sb-item" href="#">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>Períodos / Meses<span class="sb-soon">Pronto</span>
+    </a>
+  </div>
+  <div class="sb-footer">
+    <div class="sb-user" style="margin-bottom:10px">
+      <div class="sb-avatar" id="sbAvatar">G</div>
+      <div class="sb-user-info">
+        <strong id="sbName">Gerencia</strong>
+        <span>Usuario activo</span>
+      </div>
+    </div>
+    <button onclick="cerrarSesion()" style="
+      width:100%;display:flex;align-items:center;gap:9px;
+      padding:10px 12px;border-radius:10px;border:1px solid rgba(239,68,68,0.3);
+      background:rgba(239,68,68,0.08);cursor:pointer;font-family:inherit;
+      font-size:12.5px;font-weight:600;color:#FCA5A5;transition:background .18s;
+    " onmouseover="this.style.background='rgba(239,68,68,0.18)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">
+      <span style="font-size:15px">🚪</span> Cerrar Sesión
+    </button>
+  </div>
+</aside>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ══ LAYOUT ══ -->
+<div class="layout" id="layout">
+
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+      <span class="h-line"></span><span class="h-line"></span><span class="h-line"></span>
+    </button>
+    <span class="topbar-title">Cierre del Negocio</span>
+    <div class="topbar-right">
+      <div class="topbar-date" id="topbarClock">—</div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Cierre del Negocio</h1>
+      <p>Registra los ingresos del día · Zona horaria: Honduras (GMT-6)</p>
+    </div>
+
+    <!-- FECHA DE CIERRE -->
+    <div class="fecha-card">
+      <span class="fecha-label">📅 Fecha de Cierre:</span>
+      <div class="fecha-inputs">
+        <div class="fecha-input-wrap">
+          <input class="fecha-input" type="date" id="fechaCierre"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- BURBUJAS -->
+    <div class="bubbles-grid">
+
+      <!-- ── BURBUJA 1: Calculadora de Billetes ── -->
+      <div class="bubble">
+        <div class="bubble-header">
+          <div class="bubble-num">1</div>
+          <div>
+            <div class="bubble-title">Calculadora de Efectivo</div>
+            <div class="bubble-subtitle">Conteo de billetes</div>
+          </div>
+          <div class="bubble-total">
+            <div class="bubble-total-label">Efectivo</div>
+            <div class="bubble-total-value" id="totalEfectivo">L 0.00</div>
+          </div>
+        </div>
+        <div class="bubble-body">
+          <div class="bill-grid" id="tabBilletes">
+            <!-- Se genera por JS -->
+          </div>
+
+
+
+          <div class="bill-divider"></div>
+          <div class="bill-subtotal-row">
+            <span class="bill-subtotal-label">Total Efectivo</span>
+            <span class="bill-subtotal-val" id="billSubtotal">L 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BURBUJA 2: POS ── -->
+      <div class="bubble">
+        <div class="bubble-header">
+          <div class="bubble-num">2</div>
+          <div>
+            <div class="bubble-title">Total POS</div>
+            <div class="bubble-subtitle">Descuento comisión 1.8%</div>
+          </div>
+          <div class="bubble-total">
+            <div class="bubble-total-label">POS Neto</div>
+            <div class="bubble-total-value" id="totalPOS">L 0.00</div>
+          </div>
+        </div>
+        <div class="bubble-body">
+          <div class="pos-input-wrap">
+            <span class="pos-prefix">L</span>
+            <input class="pos-input" type="number" id="posInput" placeholder="0.00" min="0" step="0.01" oninput="calcPOS()"/>
+          </div>
+          <div class="pos-formula">
+            <div class="pos-formula-text">Fórmula aplicada: Total POS − (Total POS × 0.018)</div>
+            <div class="pos-formula-eq" id="posFormula">L 0.00 − L 0.00 = L 0.00</div>
+          </div>
+          <div class="pos-result-row">
+            <span class="pos-result-label">POS Neto a registrar</span>
+            <span class="pos-result-val" id="posNeto">L 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BURBUJA 3: Transferencias ── -->
+      <div class="bubble">
+        <div class="bubble-header">
+          <div class="bubble-num">3</div>
+          <div>
+            <div class="bubble-title">Transferencias</div>
+            <div class="bubble-subtitle">Ingresa una por una</div>
+          </div>
+          <div class="bubble-total">
+            <div class="bubble-total-label">Total Trans.</div>
+            <div class="bubble-total-value" id="totalTrans">L 0.00</div>
+          </div>
+        </div>
+        <div class="bubble-body">
+          <div class="trans-list" id="transList"></div>
+          <button class="btn-add-trans" onclick="addTrans()">＋ Agregar transferencia</button>
+          <div class="trans-total-row">
+            <span class="trans-total-label">Total Transferencias</span>
+            <span class="trans-total-val" id="transSubtotal">L 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BURBUJA 4: Otros Ingresos ── -->
+      <div class="bubble">
+        <div class="bubble-header">
+          <div class="bubble-num">4</div>
+          <div>
+            <div class="bubble-title">Otros Ingresos</div>
+            <div class="bubble-subtitle">Se registra por separado en P&L</div>
+          </div>
+          <div class="bubble-total">
+            <div class="bubble-total-label">Otros</div>
+            <div class="bubble-total-value" id="totalOtros">L 0.00</div>
+          </div>
+        </div>
+        <div class="bubble-body">
+          <input class="otros-desc" type="text" id="otrosDesc" placeholder="Descripción (ej: propinas, eventos...)"/>
+          <div class="otros-input-wrap">
+            <span class="otros-prefix">L</span>
+            <input class="otros-input" type="number" id="otrosInput" placeholder="0.00" min="0" step="0.01" oninput="calcOtros()"/>
+          </div>
+          <div class="otros-note">
+            Este valor se acumula mensualmente en <strong>Otros Ingresos</strong> del P&L por separado.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BURBUJA 5: Ventas Fiscales ── -->
+      <div class="bubble">
+        <div class="bubble-header">
+          <div class="bubble-num">5</div>
+          <div>
+            <div class="bubble-title">Ventas Fiscales</div>
+            <div class="bubble-subtitle">Solo informativo · No afecta el cierre</div>
+          </div>
+          <div class="bubble-total">
+            <div class="bubble-total-label">Total Ventas</div>
+            <div class="bubble-total-value" id="totalFiscal">L 0.00</div>
+          </div>
+        </div>
+        <div class="bubble-body">
+
+          <!-- Exentas -->
+          <div class="fiscal-row">
+            <div class="fiscal-label">
+              <span class="fiscal-tag exenta">Exenta</span>
+              Ventas Exentas
+            </div>
+            <div class="fiscal-input-wrap">
+              <span class="fiscal-prefix">L</span>
+              <input class="fiscal-input" type="number" id="fiscalExenta" placeholder="0.00" min="0" step="0.01" oninput="calcFiscal()"/>
+            </div>
+          </div>
+
+          <!-- Gravadas 15% -->
+          <div class="fiscal-row">
+            <div class="fiscal-label">
+              <span class="fiscal-tag g15">15%</span>
+              Ventas Gravadas
+            </div>
+            <div class="fiscal-input-wrap">
+              <span class="fiscal-prefix">L</span>
+              <input class="fiscal-input" type="number" id="fiscalG15" placeholder="0.00" min="0" step="0.01" oninput="calcFiscal()"/>
+            </div>
+          </div>
+
+          <!-- Gravadas 18% -->
+          <div class="fiscal-row">
+            <div class="fiscal-label">
+              <span class="fiscal-tag g18">18%</span>
+              Ventas Gravadas
+            </div>
+            <div class="fiscal-input-wrap">
+              <span class="fiscal-prefix">L</span>
+              <input class="fiscal-input" type="number" id="fiscalG18" placeholder="0.00" min="0" step="0.01" oninput="calcFiscal()"/>
+            </div>
+          </div>
+
+          <div class="fiscal-total-row">
+            <span class="fiscal-total-label">Total Ventas Fiscales</span>
+            <span class="fiscal-total-val" id="fiscalSubtotal">L 0.00</span>
+          </div>
+
+          <div class="otros-note" style="margin-top:10px;">
+            Solo informativo · Los valores se guardan por fecha en el historial.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /bubbles-grid -->
+
+    <!-- PANEL RESULTADO FINAL -->
+    <div class="result-panel">
+      <div class="result-header">
+        <div>
+          <h2>Resumen del Cierre</h2>
+          <p id="resumenFecha">Selecciona una fecha de cierre</p>
+        </div>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="result-item-label">💵 Efectivo</div>
+          <div class="result-item-val" id="res-efectivo">L 0.00</div>
+        </div>
+        <div class="result-item">
+          <div class="result-item-label">💳 POS Neto</div>
+          <div class="result-item-val" id="res-pos">L 0.00</div>
+        </div>
+        <div class="result-item">
+          <div class="result-item-label">🏦 Transferencias</div>
+          <div class="result-item-val" id="res-trans">L 0.00</div>
+        </div>
+        <div class="result-item" style="border-right:none">
+          <div class="result-item-label">Otros Ingresos</div>
+          <div class="result-item-val" id="res-otros">L 0.00</div>
+        </div>
+      </div>
+
+      <div class="result-total">
+        <div class="result-total-info">
+          <h3>Ingreso Diario</h3>
+          <p>Efectivo + POS Neto + Transferencias → se envía al P&L como Ingresos por Venta</p>
+        </div>
+        <div class="result-total-val" id="res-ingreso-diario">L 0.00</div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn-guardar" onclick="guardarCierre()">
+          ✅ Guardar Cierre del Día
+        </button>
+        <button class="btn-limpiar" onclick="limpiarFormulario()">
+          🗑 Limpiar
+        </button>
+        <button class="history-toggle" onclick="toggleHistory()">
+          📋 Ver cierres del mes ▾
+        </button>
+      </div>
+
+      <div class="history-panel" id="historyPanel">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Efectivo</th>
+              <th>POS Neto</th>
+              <th>Transferencias</th>
+              <th>Ingreso Diario</th>
+              <th>Otros</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="7" class="history-empty">No hay cierres registrados este mes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════ -->
+<script>
+/* == Zona horaria Honduras GMT-6 == */
+function nowHN() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Tegucigalpa' }));
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('es-HN', { weekday:'long', year:'numeric', month:'long', day:'numeric', timeZone:'America/Tegucigalpa' });
+}
+function todayISO() {
+  const d = nowHN();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function currentMonthKey() {
+  const d = nowHN();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+
+function updateClock() {
+  const d = nowHN();
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  const s = String(d.getSeconds()).padStart(2,'0');
+  document.getElementById('topbarClock').textContent =
+    `${d.toLocaleDateString('es-HN',{day:'2-digit',month:'short'})} ${h}:${m}:${s} HN`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* == Formato == */
+function fmtL(n) {
+  const s = Math.abs(n).toLocaleString('es-HN', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  return 'L ' + s;
+}
+function gn(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
+
+/* == Fecha de cierre == */
+const fechaInput = document.getElementById('fechaCierre');
+fechaInput.value = todayISO();
+fechaInput.addEventListener('change', () => { updateResumenFecha(); loadFiscal(fechaInput.value); });
+function updateResumenFecha() {
+  const v = fechaInput.value;
+  if (!v) { document.getElementById('resumenFecha').textContent = 'Selecciona una fecha de cierre'; return; }
+  const [y,mo,d] = v.split('-');
+  const dt = new Date(+y, +mo-1, +d);
+  document.getElementById('resumenFecha').textContent =
+    'Cierre: ' + dt.toLocaleDateString('es-HN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+updateResumenFecha();
+
+/* == BURBUJA 1: Billetes == */
+const BILLETES = [
+  { val:500, color:'#172554', label:'L 500' },
+  { val:200, color:'#1E3A8A', label:'L 200' },
+  { val:100, color:'#1D4ED8', label:'L 100' },
+  { val:50,  color:'#2563EB', label:'L 50'  },
+  { val:20,  color:'#3B82F6', label:'L 20'  },
+  { val:10,  color:'#60A5FA', label:'L 10'  },
+  { val:5,   color:'#93C5FD', label:'L 5',  dark:true },
+  { val:2,   color:'#BFDBFE', label:'L 2',  dark:true },
+  { val:1,   color:'#DBEAFE', label:'L 1',  dark:true },
+];
+
+function buildBillRows(items, containerId) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'bill-row';
+    const safeId = 'bill_' + containerId + '_' + String(item.val).replace('.','_');
+    const textColor = item.dark ? '#1E3A8A' : '#fff';
+    row.innerHTML = `
+      <div class="bill-denom" style="background:${item.color};color:${textColor}">${item.label}</div>
+      <span class="bill-sep">×</span>
+      <input class="bill-input" id="${safeId}" type="number" min="0" value="" placeholder="0" oninput="calcEfectivo()"/>
+      <span class="bill-eq">=</span>
+      <span class="bill-result" id="res_${safeId}">L 0.00</span>
+    `;
+    c.appendChild(row);
+  });
+}
+
+buildBillRows(BILLETES, 'tabBilletes');
+
+function calcEfectivo() {
+  let total = 0;
+  BILLETES.forEach(item => {
+    const safeId = 'bill_tabBilletes_' + String(item.val).replace('.','_');
+    const qty = parseFloat(document.getElementById(safeId)?.value) || 0;
+    const sub = qty * item.val;
+    total += sub;
+    const resEl = document.getElementById('res_' + safeId);
+    if (resEl) resEl.textContent = fmtL(sub);
+  });
+  document.getElementById('totalEfectivo').textContent = fmtL(total);
+  document.getElementById('billSubtotal').textContent  = fmtL(total);
+  updateResumen();
+}
+
+/* == BURBUJA 2: POS == */
+function calcPOS() {
+  const bruto = parseFloat(document.getElementById('posInput').value) || 0;
+  const comision = bruto * 0.018;
+  const neto = bruto - comision;
+  document.getElementById('posFormula').textContent =
+    `${fmtL(bruto)} − ${fmtL(comision)} = ${fmtL(neto)}`;
+  document.getElementById('posNeto').textContent  = fmtL(neto);
+  document.getElementById('totalPOS').textContent = fmtL(neto);
+  updateResumen();
+}
+
+/* == BURBUJA 3: Transferencias == */
+let transItems = [];
+function addTrans() {
+  const id = Date.now();
+  transItems.push({ id, desc:'', amt:0 });
+  renderTrans();
+  setTimeout(() => {
+    const el = document.getElementById('tdesc_' + id);
+    if (el) el.focus();
+  }, 30);
+}
+function removeTrans(id) {
+  transItems = transItems.filter(t => t.id !== id);
+  renderTrans();
+  calcTrans();
+}
+function renderTrans() {
+  const list = document.getElementById('transList');
+  list.innerHTML = '';
+  if (transItems.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0;">Sin transferencias registradas</div>';
+    return;
+  }
+  transItems.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'trans-item';
+    row.innerHTML = `
+      <div class="trans-item-num">${i+1}</div>
+      <input class="trans-desc" id="tdesc_${t.id}" type="text" value="${t.desc}" placeholder="Descripción" oninput="transItems.find(x=>x.id===${t.id}).desc=this.value"/>
+      <input class="trans-amt"  id="tamt_${t.id}"  type="number" value="${t.amt||''}" placeholder="0.00" min="0" step="0.01" oninput="transItems.find(x=>x.id===${t.id}).amt=parseFloat(this.value)||0;calcTrans()"/>
+      <button class="trans-del" onclick="removeTrans(${t.id})">✕</button>
+    `;
+    list.appendChild(row);
+  });
+}
+function calcTrans() {
+  const total = transItems.reduce((a,t) => a + (t.amt||0), 0);
+  document.getElementById('totalTrans').textContent   = fmtL(total);
+  document.getElementById('transSubtotal').textContent = fmtL(total);
+  updateResumen();
+}
+
+addTrans();
+
+/* == BURBUJA 5: Ventas Fiscales == */
+function calcFiscal() {
+  const exenta = parseFloat(document.getElementById('fiscalExenta').value) || 0;
+  const g15    = parseFloat(document.getElementById('fiscalG15').value)    || 0;
+  const g18    = parseFloat(document.getElementById('fiscalG18').value)    || 0;
+  const total  = exenta + g15 + g18;
+  document.getElementById('fiscalSubtotal').textContent = fmtL(total);
+  document.getElementById('totalFiscal').textContent    = fmtL(total);
+}
+
+function getFiscal() {
+  return {
+    exenta: parseFloat(document.getElementById('fiscalExenta').value) || 0,
+    g15:    parseFloat(document.getElementById('fiscalG15').value)    || 0,
+    g18:    parseFloat(document.getElementById('fiscalG18').value)    || 0,
+  };
+}
+
+function saveFiscal(fecha) {
+  const f = getFiscal();
+  localStorage.setItem('pl_fiscal_' + fecha, JSON.stringify(f));
+}
+
+function loadFiscal(fecha) {
+  try {
+    const f = JSON.parse(localStorage.getItem('pl_fiscal_' + fecha) || 'null');
+    if (f) {
+      document.getElementById('fiscalExenta').value = f.exenta || '';
+      document.getElementById('fiscalG15').value    = f.g15    || '';
+      document.getElementById('fiscalG18').value    = f.g18    || '';
+      calcFiscal();
+    }
+  } catch(e) {}
+}
+
+/* == BURBUJA 4: Otros == */
+function calcOtros() {
+  const v = parseFloat(document.getElementById('otrosInput').value) || 0;
+  document.getElementById('totalOtros').textContent = fmtL(v);
+  updateResumen();
+}
+
+/* == Resumen == */
+function getEfectivo() {
+  let t = 0;
+  BILLETES.forEach(item => {
+    const safeId = 'bill_tabBilletes_' + String(item.val).replace('.','_');
+    const qty = parseFloat(document.getElementById(safeId)?.value) || 0;
+    t += qty * item.val;
+  });
+  return t;
+}
+function getPOS()   { const b = parseFloat(document.getElementById('posInput').value)||0; return b - b*0.018; }
+function getTrans() { return transItems.reduce((a,t)=>a+(t.amt||0),0); }
+function getOtros() { return parseFloat(document.getElementById('otrosInput').value)||0; }
+
+function updateResumen() {
+  const ef = getEfectivo(), pos = getPOS(), tr = getTrans(), ot = getOtros();
+  const diario = ef + pos + tr;
+  document.getElementById('res-efectivo').textContent    = fmtL(ef);
+  document.getElementById('res-pos').textContent         = fmtL(pos);
+  document.getElementById('res-trans').textContent       = fmtL(tr);
+  document.getElementById('res-otros').textContent       = fmtL(ot);
+  document.getElementById('res-ingreso-diario').textContent = fmtL(diario);
+}
+
+/* == Guardar cierre == */
+function guardarCierre() {
+  const fecha = fechaInput.value;
+  if (!fecha) { showToast('⚠️ Selecciona una fecha de cierre'); return; }
+
+  const ef = getEfectivo(), pos = getPOS(), tr = getTrans(), ot = getOtros();
+  const diario = ef + pos + tr;
+
+  
+  const monthKey = fecha.slice(0,7); // YYYY-MM
+  const storageKey = 'pl_cierres_' + monthKey;
+
+  
+  let cierres = [];
+  try { cierres = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e) {}
+
+  
+  const existIdx = cierres.findIndex(c => c.fecha === fecha);
+  const entry = { fecha, efectivo:ef, pos_neto:pos, transferencias:tr, otros:ot, ingreso_diario:diario };
+  if (existIdx >= 0) {
+    cierres[existIdx] = entry;
+    showToast('🔄 Cierre actualizado: ' + fecha);
+  } else {
+    cierres.push(entry);
+    showToast('✅ Cierre guardado: ' + fecha);
+  }
+
+  localStorage.setItem(storageKey, JSON.stringify(cierres));
+
+  saveFiscal(fecha);
+  actualizarTotalesMes(monthKey, cierres);
+
+  renderHistory(monthKey);
+}
+
+function actualizarTotalesMes(monthKey, cierres) {
+  const totalVenta  = cierres.reduce((a,c) => a + c.ingreso_diario, 0);
+  const totalOtros  = cierres.reduce((a,c) => a + c.otros, 0);
+  const [y, m]      = monthKey.split('-');
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const periodo = `${meses[+m-1]} ${y}`;
+
+  localStorage.setItem('pl_ingresos_venta', totalVenta.toFixed(2));
+  localStorage.setItem('pl_otros_ingresos', totalOtros.toFixed(2));
+  localStorage.setItem('pl_periodo', periodo);
+
+  
+  window.dispatchEvent(new Event('storage'));
+}
+
+/* == Historial del mes == */
+function renderHistory(monthKey) {
+  const storageKey = 'pl_cierres_' + (monthKey || currentMonthKey());
+  let cierres = [];
+  try { cierres = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e) {}
+
+  const tbody = document.getElementById('historyBody');
+  if (cierres.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="history-empty">No hay cierres registrados este mes.</td></tr>';
+    return;
+  }
+  
+  cierres.sort((a,b) => b.fecha.localeCompare(a.fecha));
+  tbody.innerHTML = cierres.map(c => `
+    <tr>
+      <td>${c.fecha}</td>
+      <td>${fmtL(c.efectivo)}</td>
+      <td>${fmtL(c.pos_neto)}</td>
+      <td>${fmtL(c.transferencias)}</td>
+      <td><strong>${fmtL(c.ingreso_diario)}</strong></td>
+      <td>${fmtL(c.otros)}</td>
+      <td><button class="del-cierre" onclick="eliminarCierre('${c.fecha}','${monthKey||currentMonthKey()}')">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function eliminarCierre(fecha, monthKey) {
+  if (!confirm(`¿Eliminar el cierre del ${fecha}?`)) return;
+  const storageKey = 'pl_cierres_' + monthKey;
+  let cierres = [];
+  try { cierres = JSON.parse(localStorage.getItem(storageKey)||'[]'); } catch(e) {}
+  cierres = cierres.filter(c => c.fecha !== fecha);
+  localStorage.setItem(storageKey, JSON.stringify(cierres));
+  actualizarTotalesMes(monthKey, cierres);
+  renderHistory(monthKey);
+  showToast('🗑 Cierre eliminado: ' + fecha);
+}
+
+function toggleHistory() {
+  const panel = document.getElementById('historyPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) renderHistory(currentMonthKey());
+}
+
+/* == Limpiar formulario == */
+function limpiarFormulario() {
+  if (!confirm('¿Limpiar todos los valores del formulario?')) return;
+  
+  BILLETES.forEach(item => {
+    const safeId = 'bill_tabBilletes_' + String(item.val).replace('.','_');
+    const el = document.getElementById(safeId);
+    if (el) el.value = '';
+  });
+  document.getElementById('posInput').value   = '';
+  document.getElementById('otrosInput').value = '';
+  document.getElementById('otrosDesc').value  = '';
+  document.getElementById('fiscalExenta').value = '';
+  document.getElementById('fiscalG15').value    = '';
+  document.getElementById('fiscalG18').value    = '';
+  calcFiscal();
+  transItems = [];
+  addTrans();
+  calcEfectivo(); calcPOS(); calcTrans(); calcOtros();
+  showToast('🗑 Formulario limpio');
+}
+
+/* == Cerrar Sesion == */
+function cerrarSesion() {
+  sessionStorage.removeItem('sg_active_user');
+  window.location.href = 'index.html';
+}
+
+/* == Sidebar == */
+let sbOpen = true;
+function toggleSidebar() {
+  sbOpen = !sbOpen;
+  document.getElementById('sidebar').classList.toggle('closed', !sbOpen);
+  document.getElementById('layout').classList.toggle('full', !sbOpen);
+  document.getElementById('hamburger').classList.toggle('open', !sbOpen);
+  if (window.innerWidth <= 700) {
+    document.getElementById('sidebar').classList.toggle('open', sbOpen);
+    document.getElementById('overlay').classList.toggle('on', sbOpen);
+  }
+}
+function closeSidebar() {
+  sbOpen = false;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('on');
+}
+
+/* == Usuario activo == */
+try {
+  const u = JSON.parse(sessionStorage.getItem('sg_active_user'));
+  if (u) {
+    document.getElementById('sbName').textContent = u.name;
+    const w = u.name.trim().split(/\s+/);
+    document.getElementById('sbAvatar').textContent =
+      w.length>=2 ? (w[0][0]+w[1][0]).toUpperCase() : u.name.slice(0,2).toUpperCase();
+  }
+} catch(e) {}
+
+/* == Responsive init == */
+if (window.innerWidth <= 700) {
+  sbOpen = false;
+  document.getElementById('sidebar').classList.add('closed');
+  document.getElementById('layout').classList.add('full');
+}
+
+/* == Toast == */
+let toastT = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* == Init == */
+updateResumen();
+loadFiscal(fechaInput.value);
+</script>
+</body>
+</html>

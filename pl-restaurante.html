@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>P&L — Estado de Resultados</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --primary:       #2563EB;
+  --primary-dark:  #1E3A8A;
+  --primary-light: #60A5FA;
+  --accent:        #84CC16;
+  --text-dark:     #0F172A;
+  --text-body:     #334155;
+  --text-muted:    #64748B;
+  --border:        #E2E8F0;
+  --bg-light:      #F8FAFC;
+  --white:         #FFFFFF;
+  --green:         #16A34A;
+  --red:           #DC2626;
+  --sidebar-w:     260px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-light);
+  color: var(--text-body);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: linear-gradient(175deg, #0F172A 0%, #1E3A8A 100%);
+  display: flex; flex-direction: column; flex-shrink: 0;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 100; overflow-y: auto;
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+}
+.sidebar.closed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+
+.sb-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex; align-items: center; gap: 10px;
+}
+.sb-logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, #2563EB, #84CC16);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.sb-logo-text { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.92); line-height: 1.25; }
+.sb-logo-text small { display: block; font-size: 10px; font-weight: 400; color: rgba(255,255,255,0.35); letter-spacing: .06em; text-transform: uppercase; }
+
+.sb-section { padding: 20px 12px 4px; }
+.sb-label { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.28); letter-spacing: .1em; text-transform: uppercase; padding: 0 8px; margin-bottom: 6px; }
+
+.sb-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 9px;
+  color: rgba(255,255,255,0.58);
+  font-size: 12.5px; font-weight: 500;
+  text-decoration: none; cursor: pointer;
+  transition: background .18s, color .18s;
+  margin-bottom: 1px; position: relative; 
+}
+.sb-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+.sb-item.active { background: rgba(37,99,235,0.45); color: #fff; font-weight: 600; }
+.sb-item.active::before {
+  content: ''; position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 16px; background: var(--accent); border-radius: 0 3px 3px 0;
+}
+.sb-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: rgba(255,255,255,0.05);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.sb-item.active .sb-icon { background: rgba(37,99,235,0.4); }
+.sb-soon {
+  margin-left: auto; font-size: 9px; font-weight: 600;
+  color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.07);
+  padding: 2px 7px; border-radius: 999px;
+}
+
+.sb-footer { margin-top: auto; padding: 14px 12px; border-top: 1px solid rgba(255,255,255,0.07); }
+.sb-user {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 10px;
+  background: rgba(255,255,255,0.05); cursor: pointer;
+  transition: background .18s;
+}
+.sb-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #2563EB, #60A5FA);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.sb-user-info strong { display: block; font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,0.88); }
+.sb-user-info span { font-size: 10px; color: rgba(255,255,255,0.32); }
+
+/* ── OVERLAY MÓVIL ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.38); z-index: 99; backdrop-filter: blur(2px); }
+.overlay.on { display: block; }
+
+/* ── LAYOUT ── */
+.layout {
+  margin-left: var(--sidebar-w); flex: 1;
+  display: flex; flex-direction: column;
+  transition: margin-left 0.3s cubic-bezier(.4,0,.2,1);
+  min-height: 100vh;
+}
+.layout.full { margin-left: 0; }
+
+/* ── TOPBAR ── */
+.topbar {
+  height: 56px; background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 24px; gap: 14px;
+  position: sticky; top: 0; z-index: 50;
+  /* needed for dropdown */
+  overflow: visible;
+}
+.hamburger {
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 1.5px solid var(--border); background: transparent;
+  cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4.5px;
+  transition: border-color .2s, background .2s; flex-shrink: 0;
+}
+.hamburger:hover { border-color: var(--primary-light); background: var(--bg-light); }
+.h-line { width: 15px; height: 1.5px; background: var(--text-dark); border-radius: 2px; transition: transform .25s, opacity .25s; }
+.hamburger.open .h-line:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.hamburger.open .h-line:nth-child(2) { opacity: 0; }
+.hamburger.open .h-line:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+.topbar-title { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+
+/* Boton 3 puntos - Cierre de Mes */
+.btn-dots {
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 1.5px solid var(--border); background: transparent;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 3.5px; transition: border-color .2s, background .2s; flex-shrink: 0;
+  margin-left: auto;
+}
+.btn-dots:hover { border-color: var(--primary-light); background: var(--bg-light); }
+.btn-dots.active { border-color: var(--primary); background: #EFF6FF; }
+.dot { width: 3.5px; height: 3.5px; border-radius: 50%; background: var(--text-dark); transition: background .2s; }
+.btn-dots.active .dot { background: var(--primary); }
+
+/* Dropdown Cierre de Mes */
+.dots-menu {
+  position: absolute;
+  top: calc(56px + 6px);
+  right: 16px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+  padding: 8px;
+  min-width: 200px;
+  z-index: 200;
+  animation: fadeUp .18s ease both;
+  display: none;
+}
+.dots-menu.open { display: block; }
+.dots-menu-header {
+  padding: 8px 10px 6px;
+  font-size: 9px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.dots-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 9px;
+  font-size: 12.5px; font-weight: 500; color: var(--text-body);
+  cursor: pointer; transition: background .15s, color .15s;
+  border: none; background: transparent; font-family: inherit; width: 100%; text-align: left;
+}
+.dots-menu-item:hover { background: var(--bg-light); color: var(--primary); }
+.dots-menu-item svg { flex-shrink: 0; color: var(--text-muted); }
+.dots-menu-item:hover svg { color: var(--primary); }
+.dots-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* ── MAIN ── */
+.main { padding: 32px; flex: 1; }
+
+.page-header { margin-bottom: 28px; animation: fadeUp .35s ease both; }
+.page-header h1 { font-size: 22px; font-weight: 800; color: var(--text-dark); letter-spacing: -.02em; margin-bottom: 4px; }
+.page-header p { font-size: 13px; color: var(--text-muted); }
+
+/* ── TABLA P&L ── */
+.pl-card {
+  background: var(--white); border-radius: 18px;
+  border: 1.5px solid var(--border); overflow: hidden;
+  max-width: 680px; animation: fadeUp .4s ease .05s both;
+}
+
+.pl-section-header {
+  padding: 13px 24px 10px;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  letter-spacing: .09em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+}
+.pl-section-header:first-child { border-top: none; }
+.s-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+.pl-row {
+  display: flex; align-items: center;
+  padding: 13px 24px;
+  border-bottom: 1px solid rgba(226,232,240,0.5);
+  transition: background .15s;
+}
+.pl-row:last-of-type { border-bottom: none; }
+.pl-row:hover { background: #f5f8ff; }
+
+.pl-row-label {
+  flex: 1; font-size: 13.5px; color: var(--text-body);
+  display: flex; align-items: center; gap: 10px;
+}
+.prefix { font-size: 11px; font-weight: 700; color: var(--primary-light); width: 22px; flex-shrink: 0; }
+.prefix.minus { color: #94A3B8; }
+
+.pl-row-val {
+  font-size: 13.5px; font-weight: 600; color: var(--text-dark);
+  font-variant-numeric: tabular-nums; min-width: 150px; text-align: right;
+}
+.pl-row-val.zero { color: var(--text-muted); font-weight: 400; }
+
+.pl-total {
+  display: flex; align-items: center;
+  padding: 14px 24px;
+  background: var(--bg-light);
+  border-top: 2px solid var(--border);
+}
+.pl-total-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--text-dark); }
+.pl-total-val {
+  font-size: 15px; font-weight: 800; color: var(--primary-dark);
+  font-variant-numeric: tabular-nums; min-width: 150px; text-align: right;
+}
+
+.pl-spacer { height: 8px; background: var(--bg-light); border-top: 1px solid var(--border); }
+
+.pl-resultado {
+  display: flex; align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(90deg, rgba(37,99,235,.05), rgba(96,165,250,.03));
+  border-top: 2px solid var(--primary);
+}
+.pl-resultado-label { flex: 1; font-size: 14px; font-weight: 800; color: var(--text-dark); letter-spacing: -.01em; }
+.pl-resultado-val {
+  font-size: 22px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  min-width: 160px; text-align: right; letter-spacing: -.02em;
+}
+.pl-resultado-val.pos { color: var(--green); }
+.pl-resultado-val.neg { color: var(--red); }
+.pl-resultado-val.neu { color: var(--text-muted); }
+
+/* ── ANIMACIÓN ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.toast { position:fixed; bottom:22px; right:22px; background:var(--text-dark); color:#fff; padding:10px 18px; border-radius:11px; font-size:12.5px; font-weight:500; transform:translateY(70px); opacity:0; transition:transform .25s,opacity .25s; z-index:9999; pointer-events:none; white-space:nowrap; }
+.toast.show { transform:translateY(0); opacity:1; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+  .sidebar.open { transform: translateX(0); }
+  .layout { margin-left: 0 !important; }
+  .main { padding: 20px 16px 48px; }
+  .pl-card { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">R</div>
+    <div class="sb-logo-text">RestoPro <small>Sistema de Gestión</small></div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Finanzas</div>
+    <a class="sb-item active" href="pl-restaurante.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16V12M12 16V8M17 16v-4"/></svg></div> Estado de Resultados
+    </a>
+    <a class="sb-item" href="cierre.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></div> Cierre del Negocio
+    </a>
+    <a class="sb-item" href="#">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div> Gastos Operativos <span class="sb-soon">Pronto</span>
+    </a>
+    <a class="sb-item" href="#">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div> Gastos Administrativos <span class="sb-soon">Pronto</span>
+    </a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Sistema</div>
+    <a class="sb-item" href="#">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div> Períodos / Meses <span class="sb-soon">Pronto</span>
+    </a>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-user" style="margin-bottom:10px">
+      <div class="sb-avatar" id="sbAvatar">G</div>
+      <div class="sb-user-info">
+        <strong id="sbName">Gerencia</strong>
+        <span>Usuario activo</span>
+      </div>
+    </div>
+    <button onclick="cerrarSesion()" style="
+      width:100%;display:flex;align-items:center;gap:9px;
+      padding:10px 12px;border-radius:10px;border:1px solid rgba(239,68,68,0.3);
+      background:rgba(239,68,68,0.08);cursor:pointer;font-family:inherit;
+      font-size:12.5px;font-weight:600;color:#FCA5A5;transition:background .18s;
+    " onmouseover="this.style.background='rgba(239,68,68,0.18)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">
+      <span style="font-size:15px">🚪</span> Cerrar Sesión
+    </button>
+  </div>
+</aside>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- LAYOUT -->
+<div class="layout" id="layout">
+
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+      <span class="h-line"></span>
+      <span class="h-line"></span>
+      <span class="h-line"></span>
+    </button>
+
+    <span class="topbar-title">Estado de Resultados — P&amp;L</span>
+
+    <!-- Boton 3 puntos - extremo derecho -->
+    <button class="btn-dots" id="btnDots" onclick="toggleDotsMenu()" title="Opciones del mes">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </button>
+
+    <!-- Dropdown -->
+    <div class="dots-menu" id="dotsMenu">
+      <div class="dots-menu-header">Acciones del Mes</div>
+      <button class="dots-menu-item" onclick="abrirCierreMes()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Cierre de Mes
+      </button>
+      <div class="dots-menu-divider"></div>
+      <button class="dots-menu-item" onclick="imprimirPL()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir P&L
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Estado de Resultados</h1>
+      <p id="pl-subtitle">Datos cargados automáticamente desde cada módulo del sistema · Moneda: Lempiras (L)</p>
+    </div>
+
+    <div class="pl-card">
+
+      <!-- INGRESOS -->
+      <div class="pl-section-header">
+        <span class="s-dot" style="background:#2563EB"></span>
+        Ingresos
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Ingresos por Venta</div>
+        <div class="pl-row-val" id="v-ingresos-venta">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Otros Ingresos</div>
+        <div class="pl-row-val" id="v-otros-ingresos">L 0.00</div>
+      </div>
+      <div class="pl-total">
+        <div class="pl-total-label">Total Ingresos</div>
+        <div class="pl-total-val" id="total-ingresos">L 0.00</div>
+      </div>
+
+      <div class="pl-spacer"></div>
+
+      <!-- COSTO DE PRODUCCION -->
+      <div class="pl-section-header">
+        <span class="s-dot" style="background:#2563EB"></span>
+        Costo de Producción
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Inventario Inicial</div>
+        <div class="pl-row-val" id="v-inv-inicial">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Compras Materia Prima</div>
+        <div class="pl-row-val" id="v-compras-mp">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix minus">(−)</span>Inventario Final</div>
+        <div class="pl-row-val" id="v-inv-final">L 0.00</div>
+      </div>
+      <div class="pl-total">
+        <div class="pl-total-label">Costo de Producción</div>
+        <div class="pl-total-val" id="total-costo-prod">L 0.00</div>
+      </div>
+
+      <div class="pl-spacer"></div>
+
+      <!-- GASTOS OPERATIVOS -->
+      <div class="pl-section-header">
+        <span class="s-dot" style="background:#F59E0B"></span>
+        Gastos Operativos
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Nómina</div>
+        <div class="pl-row-val" id="v-nomina">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Alquiler</div>
+        <div class="pl-row-val" id="v-alquiler">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Servicios Públicos</div>
+        <div class="pl-row-val" id="v-servicios">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Mantenimiento y Reparaciones</div>
+        <div class="pl-row-val" id="v-mantenimiento">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Publicidad y Marketing</div>
+        <div class="pl-row-val" id="v-publicidad">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Otros Gastos Operativos</div>
+        <div class="pl-row-val" id="v-otros-op">L 0.00</div>
+      </div>
+      <div class="pl-total">
+        <div class="pl-total-label">Total Gastos Operativos</div>
+        <div class="pl-total-val" id="total-op">L 0.00</div>
+      </div>
+
+      <div class="pl-spacer"></div>
+
+      <!-- GASTOS ADMINISTRATIVOS -->
+      <div class="pl-section-header">
+        <span class="s-dot" style="background:#64748B"></span>
+        Gastos Administrativos
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Gastos de Oficina</div>
+        <div class="pl-row-val" id="v-oficina">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Otros Gastos Administrativos</div>
+        <div class="pl-row-val" id="v-otros-adm">L 0.00</div>
+      </div>
+      <div class="pl-row">
+        <div class="pl-row-label"><span class="prefix">(+)</span>Gastos Financieros</div>
+        <div class="pl-row-val" id="v-financieros">L 0.00</div>
+      </div>
+      <div class="pl-total">
+        <div class="pl-total-label">Total Gastos Administrativos</div>
+        <div class="pl-total-val" id="total-adm">L 0.00</div>
+      </div>
+
+      <div class="pl-spacer"></div>
+
+      <!-- RESULTADO -->
+      <div class="pl-resultado">
+        <div class="pl-resultado-label">Resultado Antes de Impuestos<br><span style="font-size:10px;font-weight:500;color:var(--text-muted);letter-spacing:.01em;">Ingresos − Costo Producción − Gastos Operativos − Gastos Administrativos</span></div>
+        <div class="pl-resultado-val neu" id="resultado">L 0.00</div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Formato ── */
+function fmtL(n) {
+  const s = Math.abs(n).toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n < 0 ? '(L ' + s + ')' : 'L ' + s;
+}
+
+/* ── Mapa localStorage → elemento ──
+   Cada módulo futuro escribirá su valor con estas claves.
+   Ejemplo:
+     localStorage.setItem('pl_ingresos_venta', '85000');
+     localStorage.setItem('pl_periodo', 'Abril 2026');
+*/
+const MAP = {
+  'v-ingresos-venta': 'pl_ingresos_venta',
+  'v-otros-ingresos': 'pl_otros_ingresos',
+  'v-inv-inicial':    'pl_inv_inicial',
+  'v-compras-mp':     'pl_compras_mp',
+  'v-inv-final':      'pl_inv_final',
+  'v-nomina':         'pl_nomina',
+  'v-alquiler':       'pl_alquiler',
+  'v-servicios':      'pl_servicios_publicos',
+  'v-mantenimiento':  'pl_mantenimiento',
+  'v-publicidad':     'pl_publicidad',
+  'v-otros-op':       'pl_otros_op',
+  'v-oficina':        'pl_gastos_oficina',
+  'v-otros-adm':      'pl_otros_adm',
+  'v-financieros':    'pl_gastos_financieros',
+};
+
+function gv(key) { return parseFloat(localStorage.getItem(key) || 0) || 0; }
+
+function render() {
+  const v = {};
+  for (const [id, key] of Object.entries(MAP)) {
+    v[id] = gv(key);
+    const el = document.getElementById(id);
+    if (el) { el.textContent = fmtL(v[id]); el.classList.toggle('zero', v[id] === 0); }
+  }
+
+  const tI    = v['v-ingresos-venta'] + v['v-otros-ingresos'];
+  const tCp   = v['v-inv-inicial'] + v['v-compras-mp'] - v['v-inv-final'];
+  const tOp   = v['v-nomina'] + v['v-alquiler'] + v['v-servicios'] +
+                v['v-mantenimiento'] + v['v-publicidad'] + v['v-otros-op'];
+  const tAdm  = v['v-oficina'] + v['v-otros-adm'] + v['v-financieros'];
+  const res   = tI - tCp - tOp - tAdm;
+
+  document.getElementById('total-ingresos').textContent    = fmtL(tI);
+  document.getElementById('total-costo-prod').textContent  = fmtL(tCp);
+  document.getElementById('total-op').textContent          = fmtL(tOp);
+  document.getElementById('total-adm').textContent         = fmtL(tAdm);
+
+  const rEl = document.getElementById('resultado');
+  rEl.textContent = fmtL(res);
+  rEl.className = 'pl-resultado-val ' + (res > 0 ? 'pos' : res < 0 ? 'neg' : 'neu');
+
+  const periodo = localStorage.getItem('pl_periodo') || null;
+  const subtitle = document.getElementById('pl-subtitle');
+  if (subtitle && periodo) subtitle.textContent = 'Período: ' + periodo + ' · Datos cargados desde cada módulo · Moneda: Lempiras (L)';
+}
+
+/* ── Cerrar Sesión ── */
+function cerrarSesion() {
+  sessionStorage.removeItem('sg_active_user');
+  window.location.href = 'index.html';
+}
+
+/* == Boton 3 puntos == */
+function toggleDotsMenu() {
+  const menu = document.getElementById('dotsMenu');
+  const btn  = document.getElementById('btnDots');
+  const open = menu.classList.toggle('open');
+  btn.classList.toggle('active', open);
+}
+
+function abrirCierreMes() {
+  toggleDotsMenu();
+  // Se enlazara con cierre-mes.html cuando este listo
+  showToast('Cierre de Mes -- proximamente');
+}
+
+function imprimirPL() {
+  toggleDotsMenu();
+  window.print();
+}
+
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('dotsMenu');
+  const btn  = document.getElementById('btnDots');
+  if (!menu || !btn) return;
+  if (menu.classList.contains('open') && !btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.classList.remove('open');
+    btn.classList.remove('active');
+  }
+});
+
+/* ── Sidebar ── */
+let sbOpen = true;
+function toggleSidebar() {
+  sbOpen = !sbOpen;
+  document.getElementById('sidebar').classList.toggle('closed', !sbOpen);
+  document.getElementById('layout').classList.toggle('full', !sbOpen);
+  document.getElementById('hamburger').classList.toggle('open', !sbOpen);
+  if (window.innerWidth <= 700) {
+    document.getElementById('sidebar').classList.toggle('open', sbOpen);
+    document.getElementById('overlay').classList.toggle('on', sbOpen);
+  }
+}
+function closeSidebar() {
+  sbOpen = false;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('on');
+}
+
+/* ── Usuario activo ── */
+try {
+  const u = JSON.parse(sessionStorage.getItem('sg_active_user'));
+  if (u) {
+    document.getElementById('sbName').textContent = u.name;
+    const w = u.name.trim().split(/\s+/);
+    document.getElementById('sbAvatar').textContent =
+      w.length >= 2 ? (w[0][0]+w[1][0]).toUpperCase() : u.name.slice(0,2).toUpperCase();
+  }
+} catch(e) {}
+
+/* ── Responsive init ── */
+if (window.innerWidth <= 700) {
+  sbOpen = false;
+  document.getElementById('sidebar').classList.add('closed');
+  document.getElementById('layout').classList.add('full');
+}
+
+window.addEventListener('storage', render);
+render();
+
+let toastT = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+
+</body>
+</html>
