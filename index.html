@@ -502,13 +502,8 @@
       event.stopPropagation();
       const user = users.find(u => u.id === id);
       if (!user) return;
-
       sessionStorage.setItem('sg_active_user', JSON.stringify(user));
-      showToast(`👋 Bienvenido/a, ${user.name}`);
-
-      setTimeout(() => {
-        window.location.href = 'pl-restaurante.html';
-      }, 600);
+      window.location.href = 'pl-restaurante.html';
     }
 
     // ─── Toast ─────────────────────────────────────────────────────────
