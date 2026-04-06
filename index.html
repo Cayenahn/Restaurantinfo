@@ -503,16 +503,12 @@
       const user = users.find(u => u.id === id);
       if (!user) return;
 
-      // Guardar usuario activo en sesión
       sessionStorage.setItem('sg_active_user', JSON.stringify(user));
-
       showToast(`👋 Bienvenido/a, ${user.name}`);
 
-      // Por ahora redirige a dashboard.html (lo crearemos después)
       setTimeout(() => {
-        // window.location.href = 'dashboard.html';
-        showToast(`🔜 Panel de ${user.name} — próximamente`);
-      }, 1200);
+        window.location.href = 'pl-restaurante.html';
+      }, 600);
     }
 
     // ─── Toast ─────────────────────────────────────────────────────────
