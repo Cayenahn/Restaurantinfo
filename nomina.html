@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nómina Quincenal</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --primary:       #2563EB;
+  --primary-dark:  #1E3A8A;
+  --primary-light: #60A5FA;
+  --accent:        #84CC16;
+  --text-dark:     #0F172A;
+  --text-body:     #334155;
+  --text-muted:    #64748B;
+  --border:        #E2E8F0;
+  --bg-light:      #F8FAFC;
+  --white:         #FFFFFF;
+  --red:           #DC2626;
+  --red-soft:      #FEF2F2;
+  --green:         #16A34A;
+  --green-soft:    #F0FDF4;
+  --sidebar-w:     260px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg-light);color:var(--text-body);min-height:100vh;display:flex;}
+
+/* == SIDEBAR == */
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:linear-gradient(175deg,#0F172A 0%,#1E3A8A 100%);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;transition:transform 0.3s cubic-bezier(.4,0,.2,1);}
+.sidebar.closed{transform:translateX(calc(-1 * var(--sidebar-w)));}
+.sb-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px;}
+.sb-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#2563EB,#84CC16);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;}
+.sb-logo-text{font-size:13px;font-weight:700;color:rgba(255,255,255,0.92);line-height:1.25;}
+.sb-logo-text small{display:block;font-size:10px;font-weight:400;color:rgba(255,255,255,0.35);letter-spacing:.06em;text-transform:uppercase;}
+.sb-section{padding:20px 12px 4px;}
+.sb-label{font-size:9px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:.1em;text-transform:uppercase;padding:0 8px;margin-bottom:6px;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;color:rgba(255,255,255,0.58);font-size:12.5px;font-weight:500;text-decoration:none;cursor:pointer;transition:background .18s,color .18s;margin-bottom:1px;position:relative;}
+.sb-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);}
+.sb-item.active{background:rgba(37,99,235,0.45);color:#fff;font-weight:600;}
+.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--accent);border-radius:0 3px 3px 0;}
+.sb-icon{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-item.active .sb-icon{background:rgba(37,99,235,0.4);}
+.sb-soon{margin-left:auto;font-size:9px;font-weight:600;color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.07);padding:2px 7px;border-radius:999px;}
+.sb-footer{margin-top:auto;padding:14px 12px;border-top:1px solid rgba(255,255,255,0.07);}
+.sb-user{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,0.05);}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#60A5FA);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-user-info strong{display:block;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.88);}
+.sb-user-info span{font-size:10px;color:rgba(255,255,255,0.32);}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:99;backdrop-filter:blur(2px);}
+.overlay.on{display:block;}
+
+.layout{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;transition:margin-left 0.3s cubic-bezier(.4,0,.2,1);min-height:100vh;}
+.layout.full{margin-left:0;}
+
+.topbar{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;position:sticky;top:0;z-index:50;}
+.hamburger{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--border);background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4.5px;transition:border-color .2s,background .2s;flex-shrink:0;}
+.hamburger:hover{border-color:var(--primary-light);background:var(--bg-light);}
+.h-line{width:15px;height:1.5px;background:var(--text-dark);border-radius:2px;transition:transform .25s,opacity .25s;}
+.hamburger.open .h-line:nth-child(1){transform:translateY(6px) rotate(45deg);}
+.hamburger.open .h-line:nth-child(2){opacity:0;}
+.hamburger.open .h-line:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+.topbar-title{font-size:14px;font-weight:700;color:var(--text-dark);}
+.topbar-clock{margin-left:auto;font-size:12px;font-weight:600;color:var(--text-muted);background:var(--bg-light);border:1.5px solid var(--border);border-radius:9px;padding:6px 14px;}
+
+.main{padding:28px 28px 60px;flex:1;}
+.page-header{margin-bottom:22px;animation:fadeUp .35s ease both;}
+.page-header h1{font-size:21px;font-weight:800;color:var(--text-dark);letter-spacing:-.02em;margin-bottom:3px;}
+.page-header p{font-size:13px;color:var(--text-muted);}
+
+/* == CONTROLES QUINCENA == */
+.period-bar{
+  background:var(--white);border-radius:14px;border:1px solid var(--border);
+  padding:16px 22px;margin-bottom:24px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  animation:fadeUp .38s ease .04s both;
+}
+.period-label{font-size:12.5px;font-weight:700;color:var(--text-dark);}
+.period-select{
+  height:36px;padding:0 12px;border:1.5px solid var(--border);border-radius:9px;
+  font-family:inherit;font-size:12.5px;font-weight:600;color:var(--text-dark);
+  background:var(--bg-light);outline:none;cursor:pointer;transition:border-color .2s;
+}
+.period-select:focus{border-color:var(--primary);}
+.period-year{
+  height:36px;width:90px;padding:0 12px;border:1.5px solid var(--border);border-radius:9px;
+  font-family:inherit;font-size:12.5px;font-weight:600;color:var(--text-dark);
+  background:var(--bg-light);outline:none;transition:border-color .2s;
+}
+.period-year:focus{border-color:var(--primary);}
+.btn-add-emp{
+  display:flex;align-items:center;gap:6px;padding:8px 14px;
+  background:transparent;color:var(--primary);border:1.5px solid var(--primary);
+  border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;
+  cursor:pointer;transition:background .18s;margin-left:auto;
+}
+.btn-add-emp:hover{background:#EFF6FF;}
+
+/* == GRID EMPLEADOS == */
+.employees-grid{display:flex;flex-direction:column;gap:20px;}
+
+/* == TARJETA EMPLEADO == */
+.emp-card{
+  background:var(--white);border-radius:18px;border:1px solid var(--border);
+  overflow:hidden;animation:fadeUp .42s ease both;
+}
+.emp-header{
+  padding:16px 22px;background:var(--bg-light);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.emp-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.emp-name-input{
+  font-family:inherit;font-size:15px;font-weight:700;color:var(--text-dark);
+  border:none;background:transparent;outline:none;
+  border-bottom:1.5px solid transparent;transition:border-color .2s;
+  min-width:140px;
+}
+.emp-name-input:focus{border-bottom-color:var(--primary);}
+.emp-cargo-input{
+  font-family:inherit;font-size:12px;color:var(--text-muted);
+  border:none;background:transparent;outline:none;
+  border-bottom:1px solid transparent;transition:border-color .2s;
+  min-width:100px;
+}
+.emp-cargo-input:focus{border-bottom-color:var(--primary-light);}
+.emp-header-actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.btn-del-emp{
+  width:28px;height:28px;border-radius:7px;border:1px solid var(--border);
+  background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);font-size:12px;transition:background .15s,color .15s;
+}
+.btn-del-emp:hover{background:var(--red-soft);color:var(--red);border-color:#FCA5A5;}
+
+/* == CUERPO TARJETA == */
+.emp-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.emp-col{padding:20px 22px;border-right:1px solid var(--border);}
+.emp-col:last-child{border-right:none;}
+.emp-col-title{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;}
+
+/* == CAMPOS == */
+.field-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;}
+.field-row:last-child{margin-bottom:0;}
+.field-name{font-size:12.5px;color:var(--text-body);flex:1;}
+.field-input-wrap{position:relative;flex-shrink:0;}
+.field-pfx{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:var(--text-muted);}
+.field-input{
+  height:32px;padding:0 10px 0 24px;width:120px;
+  border:1.5px solid var(--border);border-radius:8px;
+  font-family:inherit;font-size:13px;font-weight:700;
+  text-align:right;color:var(--text-dark);
+  background:var(--bg-light);outline:none;
+  transition:border-color .2s,background .2s;
+  font-variant-numeric:tabular-nums;
+}
+.field-input:focus{border-color:var(--primary);background:#fff;}
+.field-input.hrs{padding-left:10px;text-align:center;}
+
+/* Horas */
+.hrs-wrap{display:flex;align-items:center;gap:6px;}
+.hrs-label{font-size:11px;color:var(--text-muted);}
+.rate-display{font-size:11px;color:var(--text-muted);font-style:italic;}
+
+/* == PRESTAMO == */
+.loan-section{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+.loan-toggle{
+  display:flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:600;color:var(--text-muted);
+  cursor:pointer;background:none;border:none;font-family:inherit;
+  transition:color .15s;
+}
+.loan-toggle:hover{color:var(--primary);}
+.loan-fields{margin-top:10px;display:none;}
+.loan-fields.open{display:block;}
+.loan-progress{
+  margin-top:8px;height:5px;background:var(--border);border-radius:999px;overflow:hidden;
+}
+.loan-progress-bar{height:100%;background:var(--primary);border-radius:999px;transition:width .3s;}
+.loan-info{font-size:10.5px;color:var(--text-muted);margin-top:4px;}
+
+/* == TOTALES EMPLEADO == */
+.emp-footer{
+  padding:14px 22px;
+  background:rgba(37,99,235,.03);
+  border-top:2px solid var(--primary);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.emp-totals{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.emp-total-item{text-align:center;}
+.emp-total-label{font-size:9.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;}
+.emp-total-val{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;}
+.emp-total-val.blue{color:var(--primary-dark);}
+.emp-total-val.red{color:var(--red);}
+.emp-total-val.green{color:var(--green);}
+
+/* == ACCIONES GLOBALES == */
+.global-actions{
+  background:var(--white);border-radius:14px;border:1px solid var(--border);
+  padding:16px 22px;margin-top:24px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  animation:fadeUp .5s ease .2s both;
+}
+.btn-guardar{display:flex;align-items:center;gap:7px;padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .2s,transform .15s;}
+.btn-guardar:hover{background:var(--primary-dark);transform:scale(1.02);}
+.btn-limpiar{display:flex;align-items:center;gap:7px;padding:10px 16px;background:transparent;color:var(--text-muted);border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:border-color .2s,color .2s;}
+.btn-limpiar:hover{border-color:var(--red);color:var(--red);}
+.global-summary{margin-left:auto;text-align:right;}
+.global-summary-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;}
+.global-summary-val{font-size:20px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums;}
+
+.toast{position:fixed;bottom:22px;right:22px;background:var(--text-dark);color:#fff;padding:10px 18px;border-radius:11px;font-size:12.5px;font-weight:500;transform:translateY(70px);opacity:0;transition:transform .25s,opacity .25s;z-index:9999;pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(calc(-1 * var(--sidebar-w)));}
+  .sidebar.open{transform:translateX(0);}
+  .layout{margin-left:0!important;}
+  .main{padding:16px 14px 60px;}
+  .emp-body{grid-template-columns:1fr;}
+  .emp-col{border-right:none;border-bottom:1px solid var(--border);}
+  .emp-col:last-child{border-bottom:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">R</div>
+    <div class="sb-logo-text">RestoPro <small>Sistema de Gestión</small></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Finanzas</div>
+    <a class="sb-item" href="pl-restaurante.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16V12M12 16V8M17 16v-4"/></svg></div>Estado de Resultados
+    </a>
+    <a class="sb-item" href="cierre.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></div>Cierre del Negocio
+    </a>
+    <a class="sb-item" href="gastos-operativos.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>Gastos Operativos
+    </a>
+    <a class="sb-item active" href="nomina.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>Nómina
+    </a>
+    <a class="sb-item" href="gastos-administrativos.html">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>Gastos Administrativos
+    </a>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Sistema</div>
+    <a class="sb-item" href="#">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>Períodos / Meses<span class="sb-soon">Pronto</span>
+    </a>
+  </div>
+  <div class="sb-footer">
+    <div class="sb-user" style="margin-bottom:10px">
+      <div class="sb-avatar" id="sbAvatar">G</div>
+      <div class="sb-user-info">
+        <strong id="sbName">Gerencia</strong>
+        <span>Usuario activo</span>
+      </div>
+    </div>
+    <button onclick="cerrarSesion()" style="width:100%;display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:#FCA5A5;transition:background .18s;" onmouseover="this.style.background='rgba(239,68,68,0.18)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">
+      <span style="font-size:15px">🚪</span> Cerrar Sesión
+    </button>
+  </div>
+</aside>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="layout" id="layout">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+      <span class="h-line"></span><span class="h-line"></span><span class="h-line"></span>
+    </button>
+    <span class="topbar-title">Nómina Quincenal</span>
+    <div class="topbar-clock" id="topbarClock">—</div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Nómina Quincenal</h1>
+      <p>Reporte de salarios, deducciones y préstamos por empleado</p>
+    </div>
+
+    <!-- SELECTOR DE QUINCENA -->
+    <div class="period-bar">
+      <span class="period-label">Quincena:</span>
+      <select class="period-select" id="quinSelect" onchange="loadQuincena()">
+        <option value="1">1ra Quincena (1–15)</option>
+        <option value="2">2da Quincena (16–fin)</option>
+      </select>
+      <select class="period-select" id="mesSelect" onchange="loadQuincena()">
+        <option value="1">Enero</option><option value="2">Febrero</option>
+        <option value="3">Marzo</option><option value="4">Abril</option>
+        <option value="5">Mayo</option><option value="6">Junio</option>
+        <option value="7">Julio</option><option value="8">Agosto</option>
+        <option value="9">Septiembre</option><option value="10">Octubre</option>
+        <option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <input class="period-year" type="number" id="anioInput" value="2026" min="2024" max="2099" onchange="loadQuincena()"/>
+      <button class="btn-add-emp" onclick="addEmployee()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar Empleado
+      </button>
+    </div>
+
+    <!-- TARJETAS EMPLEADOS -->
+    <div class="employees-grid" id="employeesGrid"></div>
+
+    <!-- ACCIONES GLOBALES -->
+    <div class="global-actions">
+      <button class="btn-guardar" onclick="guardarQuincena()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar Quincena
+      </button>
+      <button class="btn-limpiar" onclick="limpiarQuincena()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Limpiar
+      </button>
+      <div class="global-summary">
+        <div class="global-summary-label">Total a Pagar (Quincena)</div>
+        <div class="global-summary-val" id="globalTotal">L 0.00</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* == Honduras timezone == */
+function nowHN() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Tegucigalpa' }));
+}
+function updateClock() {
+  const d = nowHN();
+  document.getElementById('topbarClock').textContent =
+    d.toLocaleDateString('es-HN',{day:'2-digit',month:'short'}) + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' +
+    String(d.getMinutes()).padStart(2,'0') + ' HN';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* == Format == */
+function fmtL(n) {
+  const s = Math.abs(n).toLocaleString('es-HN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return 'L ' + s;
+}
+
+/* == Init period selector == */
+function initPeriod() {
+  const d = nowHN();
+  document.getElementById('mesSelect').value = d.getMonth() + 1;
+  document.getElementById('anioInput').value = d.getFullYear();
+  document.getElementById('quinSelect').value = d.getDate() <= 15 ? '1' : '2';
+}
+initPeriod();
+
+function getPeriodKey() {
+  const q  = document.getElementById('quinSelect').value;
+  const m  = document.getElementById('mesSelect').value;
+  const y  = document.getElementById('anioInput').value;
+  return `nom_${y}_${String(m).padStart(2,'0')}_q${q}`;
+}
+function getPrevPeriodKey() {
+  const q  = parseInt(document.getElementById('quinSelect').value);
+  let m    = parseInt(document.getElementById('mesSelect').value);
+  let y    = parseInt(document.getElementById('anioInput').value);
+  if (q === 1) { m--; if (m < 1) { m = 12; y--; } return `nom_${y}_${String(m).padStart(2,'0')}_q2`; }
+  return `nom_${y}_${String(m).padStart(2,'0')}_q1`;
+}
+
+/* == Employee state == */
+let employees = [];
+
+const DEFAULT_EMPLOYEES = [
+  { id: 1, name: 'Empleado 1', cargo: 'Cargo', tarifaHora: 0, horas: 9, compras: 0, adelanto: 0, prestamo: { activo: false, montoTotal: 0, saldoPendiente: 0, cuotaQuincenal: 0 } },
+  { id: 2, name: 'Empleado 2', cargo: 'Cargo', tarifaHora: 0, horas: 9, compras: 0, adelanto: 0, prestamo: { activo: false, montoTotal: 0, saldoPendiente: 0, cuotaQuincenal: 0 } },
+  { id: 3, name: 'Empleado 3', cargo: 'Cargo', tarifaHora: 0, horas: 9, compras: 0, adelanto: 0, prestamo: { activo: false, montoTotal: 0, saldoPendiente: 0, cuotaQuincenal: 0 } },
+];
+
+/* == Calculos por empleado == */
+function calcEmp(e) {
+  const salarioBruto  = e.tarifaHora * e.horas;
+  const cuotaPrestamo = e.prestamo.activo ? Math.min(e.prestamo.cuotaQuincenal, e.prestamo.saldoPendiente) : 0;
+  const totalDeducc   = e.compras + e.adelanto + cuotaPrestamo;
+  const neto          = Math.max(0, salarioBruto - totalDeducc);
+  return { salarioBruto, cuotaPrestamo, totalDeducc, neto };
+}
+
+/* == Render == */
+function render() {
+  const grid = document.getElementById('employeesGrid');
+  if (employees.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">Sin empleados · Haz clic en "Agregar Empleado"</div>';
+    updateGlobalTotal();
+    return;
+  }
+  grid.innerHTML = '';
+  employees.forEach((e, idx) => {
+    const c = calcEmp(e);
+    const initials = e.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase() || '??';
+    const pctPrestamo = e.prestamo.montoTotal > 0 ? ((1 - e.prestamo.saldoPendiente / e.prestamo.montoTotal) * 100).toFixed(0) : 0;
+
+    const card = document.createElement('div');
+    card.className = 'emp-card';
+    card.innerHTML = `
+      <div class="emp-header">
+        <div class="emp-avatar" id="av_${e.id}">${initials}</div>
+        <div>
+          <input class="emp-name-input" value="${e.name}" placeholder="Nombre empleado"
+            oninput="updateEmp(${e.id},'name',this.value)" onblur="render()"/>
+          <br>
+          <input class="emp-cargo-input" value="${e.cargo}" placeholder="Cargo"
+            oninput="updateEmp(${e.id},'cargo',this.value)"/>
+        </div>
+        <div class="emp-header-actions">
+          <button class="btn-del-emp" onclick="deleteEmployee(${e.id})">✕</button>
+        </div>
+      </div>
+
+      <div class="emp-body">
+        <!-- COL IZQUIERDA: Salario -->
+        <div class="emp-col">
+          <div class="emp-col-title">Salario</div>
+
+          <div class="field-row">
+            <span class="field-name">Tarifa por hora</span>
+            <div class="field-input-wrap">
+              <span class="field-pfx">L</span>
+              <input class="field-input" type="number" value="${e.tarifaHora||''}" placeholder="0.00"
+                min="0" step="0.01" oninput="updateEmp(${e.id},'tarifaHora',parseFloat(this.value)||0);calcRender(${e.id})"/>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-name">Horas trabajadas</span>
+            <div class="hrs-wrap">
+              <input class="field-input hrs" type="number" value="${e.horas}" placeholder="9"
+                min="1" max="24" step="0.5" style="width:70px"
+                oninput="updateEmp(${e.id},'horas',parseFloat(this.value)||0);calcRender(${e.id})"/>
+              <span class="hrs-label">hrs</span>
+            </div>
+          </div>
+
+          <div class="field-row" style="padding-top:8px;border-top:1px solid var(--border);">
+            <span class="field-name" style="font-weight:700;color:var(--text-dark)">Salario Bruto</span>
+            <span style="font-size:14px;font-weight:800;color:var(--primary-dark);font-variant-numeric:tabular-nums" id="bruto_${e.id}">${fmtL(c.salarioBruto)}</span>
+          </div>
+        </div>
+
+        <!-- COL DERECHA: Deducciones -->
+        <div class="emp-col">
+          <div class="emp-col-title">Deducciones</div>
+
+          <div class="field-row">
+            <span class="field-name">Compras en restaurante</span>
+            <div class="field-input-wrap">
+              <span class="field-pfx">L</span>
+              <input class="field-input" type="number" value="${e.compras||''}" placeholder="0.00"
+                min="0" step="0.01" oninput="updateEmp(${e.id},'compras',parseFloat(this.value)||0);calcRender(${e.id})"/>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-name">Adelanto de quincena</span>
+            <div class="field-input-wrap">
+              <span class="field-pfx">L</span>
+              <input class="field-input" type="number" value="${e.adelanto||''}" placeholder="0.00"
+                min="0" step="0.01" oninput="updateEmp(${e.id},'adelanto',parseFloat(this.value)||0);calcRender(${e.id})"/>
+            </div>
+          </div>
+
+          <!-- Préstamo -->
+          <div class="loan-section">
+            <button class="loan-toggle" onclick="toggleLoan(${e.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              ${e.prestamo.activo ? 'Préstamo activo' : 'Agregar préstamo'}
+            </button>
+
+            <div class="loan-fields ${e.prestamo.activo ? 'open' : ''}" id="loan_${e.id}">
+              <div class="field-row" style="margin-top:10px">
+                <span class="field-name">Monto total préstamo</span>
+                <div class="field-input-wrap">
+                  <span class="field-pfx">L</span>
+                  <input class="field-input" type="number" value="${e.prestamo.montoTotal||''}" placeholder="0.00"
+                    min="0" step="0.01"
+                    oninput="updateLoan(${e.id},'montoTotal',parseFloat(this.value)||0)"/>
+                </div>
+              </div>
+              <div class="field-row">
+                <span class="field-name">Saldo pendiente</span>
+                <div class="field-input-wrap">
+                  <span class="field-pfx">L</span>
+                  <input class="field-input" type="number" value="${e.prestamo.saldoPendiente||''}" placeholder="0.00"
+                    min="0" step="0.01"
+                    oninput="updateLoan(${e.id},'saldoPendiente',parseFloat(this.value)||0);calcRender(${e.id})"/>
+                </div>
+              </div>
+              <div class="field-row">
+                <span class="field-name">Cuota por quincena</span>
+                <div class="field-input-wrap">
+                  <span class="field-pfx">L</span>
+                  <input class="field-input" type="number" value="${e.prestamo.cuotaQuincenal||''}" placeholder="0.00"
+                    min="0" step="0.01"
+                    oninput="updateLoan(${e.id},'cuotaQuincenal',parseFloat(this.value)||0);calcRender(${e.id})"/>
+                </div>
+              </div>
+              <div class="loan-progress">
+                <div class="loan-progress-bar" id="lbar_${e.id}" style="width:${pctPrestamo}%"></div>
+              </div>
+              <div class="loan-info" id="linfo_${e.id}">
+                ${e.prestamo.saldoPendiente > 0
+                  ? 'Saldo: ' + fmtL(e.prestamo.saldoPendiente) + ' · ' + pctPrestamo + '% pagado'
+                  : e.prestamo.montoTotal > 0 ? '✅ Préstamo saldado' : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row" style="padding-top:8px;border-top:1px solid var(--border);margin-top:10px;">
+            <span class="field-name" style="font-weight:700;color:var(--red)">Total Deducciones</span>
+            <span style="font-size:14px;font-weight:800;color:var(--red);font-variant-numeric:tabular-nums" id="deducc_${e.id}">${fmtL(c.totalDeducc)}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER EMPLEADO -->
+      <div class="emp-footer">
+        <div class="emp-totals">
+          <div class="emp-total-item">
+            <div class="emp-total-label">Salario Bruto</div>
+            <div class="emp-total-val blue" id="ft_bruto_${e.id}">${fmtL(c.salarioBruto)}</div>
+          </div>
+          <div class="emp-total-item">
+            <div class="emp-total-label">Deducciones</div>
+            <div class="emp-total-val red" id="ft_ded_${e.id}">${fmtL(c.totalDeducc)}</div>
+          </div>
+          ${e.prestamo.activo && c.cuotaPrestamo > 0 ? `
+          <div class="emp-total-item">
+            <div class="emp-total-label">Cuota Préstamo</div>
+            <div class="emp-total-val red" id="ft_loan_${e.id}">${fmtL(c.cuotaPrestamo)}</div>
+          </div>` : ''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;">Neto a Pagar</div>
+          <div style="font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;" class="${c.neto >= 0 ? 'emp-total-val green' : 'emp-total-val red'}" id="ft_neto_${e.id}">${fmtL(c.neto)}</div>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  updateGlobalTotal();
+}
+
+/* == Updates == */
+function updateEmp(id, field, value) {
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  e[field] = value;
+  // Update avatar initials live
+  if (field === 'name') {
+    const av = document.getElementById('av_' + id);
+    if (av) av.textContent = value.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase() || '??';
+  }
+}
+
+function updateLoan(id, field, value) {
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  e.prestamo[field] = value;
+  // Update progress
+  const pct = e.prestamo.montoTotal > 0 ? ((1 - e.prestamo.saldoPendiente / e.prestamo.montoTotal) * 100).toFixed(0) : 0;
+  const bar  = document.getElementById('lbar_' + id);
+  const info = document.getElementById('linfo_' + id);
+  if (bar)  bar.style.width = pct + '%';
+  if (info) info.textContent = e.prestamo.saldoPendiente > 0
+    ? 'Saldo: ' + fmtL(e.prestamo.saldoPendiente) + ' · ' + pct + '% pagado'
+    : e.prestamo.montoTotal > 0 ? 'Préstamo saldado' : '';
+}
+
+function toggleLoan(id) {
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  e.prestamo.activo = !e.prestamo.activo;
+  const lf = document.getElementById('loan_' + id);
+  if (lf) lf.classList.toggle('open', e.prestamo.activo);
+}
+
+/* == Recalc display only (no re-render) == */
+function calcRender(id) {
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  const c = calcEmp(e);
+  const s = (eid, val) => { const el = document.getElementById(eid); if (el) el.textContent = fmtL(val); };
+  s('bruto_'    + id, c.salarioBruto);
+  s('deducc_'   + id, c.totalDeducc);
+  s('ft_bruto_' + id, c.salarioBruto);
+  s('ft_ded_'   + id, c.totalDeducc);
+  s('ft_neto_'  + id, c.neto);
+  const netoEl = document.getElementById('ft_neto_' + id);
+  if (netoEl) netoEl.style.color = c.neto >= 0 ? 'var(--green)' : 'var(--red)';
+  updateGlobalTotal();
+}
+
+function updateGlobalTotal() {
+  const total = employees.reduce((sum, e) => sum + calcEmp(e).neto, 0);
+  document.getElementById('globalTotal').textContent = fmtL(total);
+}
+
+/* == Agregar / eliminar empleado == */
+function addEmployee() {
+  const id = Date.now();
+  employees.push({ id, name: 'Nuevo Empleado', cargo: 'Cargo', tarifaHora: 0, horas: 9,
+    compras: 0, adelanto: 0, prestamo: { activo: false, montoTotal: 0, saldoPendiente: 0, cuotaQuincenal: 0 } });
+  render();
+  showToast('Empleado agregado');
+}
+
+function deleteEmployee(id) {
+  if (!confirm('Eliminar este empleado?')) return;
+  employees = employees.filter(e => e.id !== id);
+  render();
+}
+
+/* == Guardar quincena ==
+   Al guardar:
+   1. Guarda snapshot de esta quincena
+   2. Descuenta cuota del prestamo del saldo pendiente
+   3. Pasa saldo actualizado a la siguiente quincena automaticamente
+*/
+function guardarQuincena() {
+  const key = getPeriodKey();
+  const snapshot = employees.map(e => ({ ...e, prestamo: { ...e.prestamo } }));
+  localStorage.setItem(key, JSON.stringify(snapshot));
+
+  // Actualizar saldo pendiente para la proxima quincena
+  const nextKey = getNextPeriodKey();
+  const nextData = employees.map(e => {
+    const cuota = e.prestamo.activo ? Math.min(e.prestamo.cuotaQuincenal, e.prestamo.saldoPendiente) : 0;
+    const nuevoSaldo = Math.max(0, e.prestamo.saldoPendiente - cuota);
+    return {
+      ...e,
+      compras:  0,
+      adelanto: 0,
+      prestamo: { ...e.prestamo, saldoPendiente: nuevoSaldo }
+    };
+  });
+  // Solo guarda el carry-over si no existe ya data en la siguiente quincena
+  if (!localStorage.getItem(nextKey)) {
+    localStorage.setItem(nextKey, JSON.stringify(nextData));
+  }
+
+  showToast('Quincena guardada');
+}
+
+function getNextPeriodKey() {
+  const q  = parseInt(document.getElementById('quinSelect').value);
+  let m    = parseInt(document.getElementById('mesSelect').value);
+  let y    = parseInt(document.getElementById('anioInput').value);
+  if (q === 1) return `nom_${y}_${String(m).padStart(2,'0')}_q2`;
+  m++; if (m > 12) { m = 1; y++; }
+  return `nom_${y}_${String(m).padStart(2,'0')}_q1`;
+}
+
+/* == Cargar quincena == */
+function loadQuincena() {
+  const key  = getPeriodKey();
+  const raw  = localStorage.getItem(key);
+  if (raw) {
+    try {
+      employees = JSON.parse(raw);
+      render();
+      showToast('Quincena cargada');
+      return;
+    } catch(e) {}
+  }
+  // Si no hay datos, cargar empleados default o los de quincena anterior
+  const prevRaw = localStorage.getItem(getPrevPeriodKey());
+  if (prevRaw) {
+    try {
+      const prev = JSON.parse(prevRaw);
+      // Llevar solo estructura + saldo prestamo, limpiar compras/adelanto
+      employees = prev.map(e => ({
+        ...e, compras: 0, adelanto: 0,
+        prestamo: { ...e.prestamo }
+      }));
+      render();
+      showToast('Estructura cargada de quincena anterior');
+      return;
+    } catch(e) {}
+  }
+  employees = DEFAULT_EMPLOYEES.map(e => ({ ...e, prestamo: { ...e.prestamo } }));
+  render();
+}
+
+/* == Limpiar == */
+function limpiarQuincena() {
+  if (!confirm('Limpiar los valores de esta quincena?')) return;
+  employees = employees.map(e => ({
+    ...e, compras: 0, adelanto: 0
+  }));
+  render();
+  showToast('Valores limpiados');
+}
+
+/* == Sidebar == */
+let sbOpen = true;
+function toggleSidebar() {
+  sbOpen = !sbOpen;
+  document.getElementById('sidebar').classList.toggle('closed', !sbOpen);
+  document.getElementById('layout').classList.toggle('full', !sbOpen);
+  document.getElementById('hamburger').classList.toggle('open', !sbOpen);
+  if (window.innerWidth <= 700) {
+    document.getElementById('sidebar').classList.toggle('open', sbOpen);
+    document.getElementById('overlay').classList.toggle('on', sbOpen);
+  }
+}
+function closeSidebar() {
+  sbOpen = false;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('on');
+}
+function cerrarSesion() {
+  sessionStorage.removeItem('sg_active_user');
+  window.location.href = 'index.html';
+}
+
+/* == Usuario activo == */
+try {
+  const u = JSON.parse(sessionStorage.getItem('sg_active_user'));
+  if (u) {
+    document.getElementById('sbName').textContent = u.name;
+    const w = u.name.trim().split(/\s+/);
+    document.getElementById('sbAvatar').textContent =
+      w.length >= 2 ? (w[0][0]+w[1][0]).toUpperCase() : u.name.slice(0,2).toUpperCase();
+  }
+} catch(e) {}
+
+if (window.innerWidth <= 700) {
+  sbOpen = false;
+  document.getElementById('sidebar').classList.add('closed');
+  document.getElementById('layout').classList.add('full');
+}
+
+let toastT = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* == Init == */
+loadQuincena();
+</script>
+</body>
+</html>
