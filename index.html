@@ -282,7 +282,7 @@
         await signOut(auth);
       }
     } catch (err) {
-      showError('Error al cargar perfil. Intenta de nuevo.');
+      showError('Error: ' + err.message + ' | code: ' + err.code);
       setLoading(false);
     }
   }
