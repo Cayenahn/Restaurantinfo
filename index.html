@@ -33,8 +33,6 @@
       position: relative;
       overflow: hidden;
     }
-
-    /* Fondo decorativo */
     body::before {
       content: '';
       position: fixed;
@@ -64,8 +62,6 @@
       z-index: 1;
       animation: fadeUp .4s ease both;
     }
-
-    /* Logo */
     .logo {
       display: flex;
       align-items: center;
@@ -86,7 +82,6 @@
     h1 { font-size: 22px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -.02em; }
     .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
 
-    /* Campos */
     .field { margin-bottom: 16px; }
     .field label { display: block; font-size: 12px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
     .field input {
@@ -102,13 +97,6 @@
     .field input:focus { border-color: var(--primary); background: #fff; }
     .field input.error { border-color: var(--red); background: var(--red-soft); }
 
-    .error-msg {
-      font-size: 12px; color: var(--red); font-weight: 600;
-      margin-top: 5px; display: none;
-    }
-    .error-msg.show { display: block; }
-
-    /* Botón */
     .btn-login {
       width: 100%; height: 46px;
       background: var(--primary);
@@ -121,10 +109,8 @@
       transition: background .2s, transform .15s;
     }
     .btn-login:hover { background: var(--primary-dark); transform: scale(1.01); }
-    .btn-login:active { transform: scale(0.99); }
     .btn-login:disabled { background: #93C5FD; cursor: not-allowed; transform: none; }
 
-    /* Spinner */
     .spinner {
       width: 16px; height: 16px;
       border: 2px solid rgba(255,255,255,0.4);
@@ -136,7 +122,6 @@
     .btn-login.loading .spinner { display: block; }
     .btn-login.loading .btn-text { display: none; }
 
-    /* Alerta general */
     .alert {
       padding: 12px 14px;
       border-radius: 10px;
@@ -147,7 +132,6 @@
     .alert.show { display: block; }
     .alert.err { background: var(--red-soft); color: var(--red); border: 1px solid #FCA5A5; }
 
-    /* Footer */
     .card-footer {
       margin-top: 28px;
       padding-top: 18px;
@@ -194,15 +178,14 @@
   </div>
 </div>
 
-<!-- Firebase SDKs (CDN) -->
 <script type="module">
-  import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc }
+  import { getFirestore, doc, getDoc, enableNetwork }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ── Configuración Firebase ──────────────────────────────────────────
   const firebaseConfig = {
     apiKey:            "AIzaSyD7EOVsm2lMcPJzND9IOJvIv7jptsU5x4g",
     authDomain:        "restaurant-admin-461d2.firebaseapp.com",
@@ -217,18 +200,20 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  // ── Si ya hay sesión activa, redirigir ──────────────────────────────
+  // Forzar conexión online
+  enableNetwork(db);
+
+  // Si ya hay sesión activa, redirigir
   onAuthStateChanged(auth, async (user) => {
     if (user) await redirectByRole(user.uid);
   });
 
-  // ── Login ───────────────────────────────────────────────────────────
   const btn      = document.getElementById('btnLogin');
   const emailEl  = document.getElementById('email');
   const passEl   = document.getElementById('password');
   const alertErr = document.getElementById('alertErr');
 
-  btn.addEventListener('click', () => login());
+  btn.addEventListener('click', login);
   document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
   async function login() {
@@ -241,7 +226,7 @@
 
     if (!email || !password) {
       showError('Completa todos los campos.');
-      if (!email) emailEl.classList.add('error');
+      if (!email)    emailEl.classList.add('error');
       if (!password) passEl.classList.add('error');
       return;
     }
@@ -256,18 +241,20 @@
     }
   }
 
-  // ── Leer rol en Firestore y redirigir ───────────────────────────────
   async function redirectByRole(uid) {
     try {
+      // Pequeña espera para que Firestore establezca conexión
+      await new Promise(r => setTimeout(r, 600));
+
       const snap = await getDoc(doc(db, 'usuarios', uid));
+
       if (snap.exists()) {
         const data = snap.data();
-        // Guardar info básica en sessionStorage para usar en otros HTML
         sessionStorage.setItem('sg_active_user', JSON.stringify({
-          uid:    uid,
-          name:   data.nombre  || 'Usuario',
-          role:   data.rol     || 'colaborador',
-          cargo:  data.cargo   || '',
+          uid:   uid,
+          name:  data.nombre || 'Usuario',
+          role:  data.rol    || 'colaborador',
+          cargo: data.cargo  || '',
         }));
         if (data.rol === 'gerencia') {
           window.location.href = 'pl-restaurante.html';
@@ -275,19 +262,16 @@
           window.location.href = 'su-espacio.html';
         }
       } else {
-        // Usuario en Auth pero sin perfil en Firestore
-        showError('Tu cuenta no tiene un perfil configurado. Contacta a Gerencia.');
+        showError('Tu cuenta no tiene perfil configurado. Contacta a Gerencia.');
         setLoading(false);
-        const { signOut } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
         await signOut(auth);
       }
     } catch (err) {
-      showError('Error: ' + err.message + ' | code: ' + err.code);
+      showError('Error: ' + err.message + ' | ' + err.code);
       setLoading(false);
     }
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────
   function setLoading(on) {
     btn.classList.toggle('loading', on);
     btn.disabled = on;
@@ -300,14 +284,14 @@
 
   function friendlyError(code) {
     const map = {
-      'auth/user-not-found':      'No existe una cuenta con ese correo.',
-      'auth/wrong-password':      'Contraseña incorrecta.',
-      'auth/invalid-email':       'El correo no tiene un formato válido.',
-      'auth/too-many-requests':   'Demasiados intentos. Espera unos minutos.',
-      'auth/invalid-credential':  'Correo o contraseña incorrectos.',
+      'auth/user-not-found':         'No existe una cuenta con ese correo.',
+      'auth/wrong-password':         'Contraseña incorrecta.',
+      'auth/invalid-email':          'El correo no tiene un formato válido.',
+      'auth/too-many-requests':      'Demasiados intentos. Espera unos minutos.',
+      'auth/invalid-credential':     'Correo o contraseña incorrectos.',
       'auth/network-request-failed': 'Sin conexión a internet.',
     };
-    return map[code] || 'Error al iniciar sesión. Intenta de nuevo.';
+    return map[code] || 'Error al iniciar sesión (' + code + ')';
   }
 </script>
 </body>
